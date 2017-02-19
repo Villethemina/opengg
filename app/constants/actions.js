@@ -1,0 +1,1 @@
+export const LOAD_SUMMONER_DATA = 'LOAD_SUMMONER_DATA';

@@ -13,8 +13,12 @@
   "rules": {
     "indent": [
       "error",
-      2
+      2,
+      {
+        "SwitchCase": 1
+      }
     ],
+    "no-console": 0,
     "comma-dangle": 2,
     "comma-spacing": [
       2,
@@ -76,6 +80,7 @@
       2,
       "always"
     ],
+    "react/prop-types": 0,
     "no-trailing-spaces": 2,
     "no-undef": 2,
     "no-underscore-dangle": 0,
