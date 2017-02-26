@@ -1,1 +1,4 @@
 export const LOAD_SUMMONER_DATA = 'LOAD_SUMMONER_DATA';
+export const LOAD_MASTERY_DATA = 'LOAD_MASTERY_DATA';
+export const LOAD_RUNE_DATA = 'LOAD_RUNE_DATA';
+export const CHANGE_VIEW = 'CHANGE_VIEW';

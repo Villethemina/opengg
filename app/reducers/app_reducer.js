@@ -5,7 +5,7 @@ const initialState = {
   currentView: MAIN_VIEW
 };
 
-const summoner = (state = initialState, action) => {
+const reducer = (state = initialState, action) => {
   switch (action.type) {
     case CHANGE_VIEW:
       return {
@@ -16,4 +16,4 @@ const summoner = (state = initialState, action) => {
   }
 };
 
-export default summoner;
+export default reducer;
