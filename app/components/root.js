@@ -1,18 +1,19 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import {
-  Modal,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   View,
-  Button
+  AsyncStorage
 } from 'react-native';
-import { loadSummonerData, loadMasteryData, loadRuneData } from '../actions/index';
-import { getSummoner } from '../reducers/index';
 
-const API_KEY = '*****';
+import AddSummonersView from './add_summoners_view';
+import { loadSummoners, changeView, loadMatchData } from '../actions/index';
+import { getView } from '../reducers/index';
+import { ADD_SUMMONERS_VIEW, MATCH_DETAILS_VIEW } from '../constants/views';
+import { API_ADDRESS, API_KEY, SERVER } from '../constants/riot_api';
+import { ASYNC_STORAGE_KEY } from '../constants/app';
 
 class Root extends Component {
   state = {
@@ -22,45 +23,36 @@ class Root extends Component {
     modalText: ''
   }
 
-  handleSearchFieldTextChange = searchFieldText => this.setState({ searchFieldText });
-
-  handleSearch = () => {
-    fetch(`https://euw.api.pvp.net/api/lol/euw/v1.4/summoner/by-name/${this.state.searchFieldText}?api_key=${API_KEY}`)
-    .then(response => {
-      console.log('summoner name response: ', response);
-      if (response.status !== 200) {
-        this.setState({
-          modalText: 'Summoner not found!',
-          modalVisible: true
-        });
-        return;
+  componentWillMount() {
+    AsyncStorage.getItem(ASYNC_STORAGE_KEY).then(item => {
+      if (item) {
+        const summoners = JSON.parse(item);
+        this.props.dispatch(loadSummoners(summoners));
+        this.checkForOngoingGame(summoners);
       }
-      response.json().then(summonerData => {
-        const summoner = Object.values(summonerData)[0];
-        this.props.dispatch(loadSummonerData(summoner));
-        fetch(`https://euw.api.pvp.net/api/lol/euw/v1.4/summoner/${summoner.id}/masteries?api_key=${API_KEY}`)
-        .then(response => {
-          response.json().then(masteryData => {
-            const masteries = Object.values(masteryData)[0];
-            this.props.dispatch(loadMasteryData(masteries));
-            console.log('summoner masteries response: ', masteryData);
-          });
-        });
-        fetch(`https://euw.api.pvp.net/api/lol/euw/v1.4/summoner/${summoner.id}/runes?api_key=${API_KEY}`)
-        .then(response => {
-          response.json().then(runeData => {
-            const runes = Object.values(runeData)[0];
-            this.props.dispatch(loadRuneData(runes));
-            console.log('summoner runes response: ', runeData);
-          });
-        });
-      });
-    });
-  };
+    }).done();
+  }
 
-  handleModalClose = () => {
-    this.setState({ modalVisible: false });
-  };
+  searchForSummonerInMatch = summonerId => {
+    fetch(`${API_ADDRESS}/observer-mode/rest/consumer/getSpectatorGameInfo/${SERVER}/${summonerId}?api_key=${API_KEY}`)
+    .then(response => {
+      console.log('match response: ', summonerId, response);
+      if (response.status !== 200) return Promise.reject('No match found for summoner: ' + summonerId);
+      return response.json();
+    })
+    .then(match => {
+      console.log(match);
+      this.props.dispatch(loadMatchData(match));
+      this.props.dispatch(changeView(MATCH_DETAILS_VIEW));
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
+
+  checkForOngoingGame(summoners) {
+    Object.keys(summoners).forEach(key => this.searchForSummonerInMatch(key));
+  }
 
   renderIOS() {
     return (
@@ -73,80 +65,19 @@ class Root extends Component {
   }
 
   renderAndroid() {
-    return (
-      <View style={styles.container}>
-        <Modal
-          animationType={'slide'}
-          transparent={true}
-          visible={this.state.modalVisible}
-          onRequestClose={this.handleModalClose}
-        >
-          <View style={styles.spacer} />
-          <View style={styles.modalContainer}>
-            <View style={styles.modalSpacer} />
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>
-                {this.state.modalText}
-              </Text>
-              <Button
-                onPress={this.handleModalClose}
-                title={'Okay.'}
-              />
-            </View>
-            <View style={styles.modalSpacer} />
+    switch (this.props.view) {
+      case ADD_SUMMONERS_VIEW: return <AddSummonersView />;
+      case MATCH_DETAILS_VIEW: {
+        return (
+          <View style={styles.container}>
+            <Text style={styles.title}>
+              Match details view placeholder
+            </Text>
           </View>
-          <View style={styles.spacer} />
-        </Modal>
-        <View style={styles.searchArea}>
-          <Text style={styles.title}>
-            Search:
-          </Text>
-          <TextInput
-            autoCapitalize={'none'}
-            autoCorrect={false}
-            maxLength={16}
-            style={styles.searchField}
-            onChangeText={this.handleSearchFieldTextChange}
-            placeholder={'Summoner name'}
-            onSubmitEditing={this.handleSearch}
-            value={this.state.searchFieldText}
-          />
-        </View>
-        <View style={styles.infoArea}>
-          <Text style={styles.title}>
-            Summoner information:
-          </Text>
-          <Text style={styles.text}>
-            Name: {this.props.summoner.name}
-          </Text>
-          <Text style={styles.text}>
-            Summoner Level: {this.props.summoner.summonerLevel}
-          </Text>
-          <View style={styles.split}>
-            <View style={styles.half}>
-              <Text style={styles.text}>
-                Rune pages:
-              </Text>
-              {this.props.summoner.runes.map(page =>
-                <Text style={styles.text}>
-                  {page.name}
-                </Text>
-              )}
-            </View>
-            <View style={styles.half}>
-              <Text style={styles.text}>
-                Mastery pages:
-              </Text>
-              {this.props.summoner.masteries.map(page =>
-                <Text style={styles.text}>
-                  {page.name}
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
-      </View>
-    );
+        );
+      }
+      default: return null;
+    }
   }
 
   render() {
@@ -158,63 +89,16 @@ class Root extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F5FCFF'
-  },
-  spacer: {
-    flex: 0.3
-  },
-  modalContainer: {
-    flexDirection: 'row',
-    flex: 0.4
-  },
-  modalContent: {
-    backgroundColor: '#cccccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 0.8,
-    borderRadius: 10
-  },
-  modalText: {
-    fontSize: 20,
-    marginBottom: 20
-  },
-  modalSpacer: {
-    flex: 0.1
-  },
-  searchArea: {
-    marginTop: 20,
-    marginBottom: 20
-  },
-  infoArea: {
-    justifyContent: 'flex-start'
-  },
-  split: {
-    flex: 1,
-    flexDirection: 'row'
-  },
-  half: {
-    flex: 0.5
   },
   title: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10
-  },
-  text: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5
-  },
-  searchField: {
-    height: 40,
-    width: 250,
-    borderColor: 'gray',
-    borderWidth: 1
   }
 });
 
 export default connect(state => ({
-  summoner: getSummoner(state)
+  view: getView(state)
 }))(Root);

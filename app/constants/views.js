@@ -1,1 +1,2 @@
-export const MAIN_VIEW = 'MAIN_VIEW';
+export const ADD_SUMMONERS_VIEW = 'ADD_SUMMONERS_VIEW';
+export const MATCH_DETAILS_VIEW = 'MATCH_DETAILS_VIEW';

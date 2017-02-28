@@ -1,12 +1,20 @@
 import { combineReducers } from 'redux';
-import summoner, * as fromSummoner from './summoner_reducer';
-import app from './app_reducer';
+import match, * as fromMatch from './match_reducer';
+import app, * as fromApp from './app_reducer';
 
 export default combineReducers({
-  summoner,
+  match,
   app
 });
 
-export function getSummoner(state) {
-  return fromSummoner.getSummoner(state.summoner);
+export function getMatch(state) {
+  return fromMatch.getMatch(state.match);
+}
+
+export function getSummoners(state) {
+  return fromApp.getSummoners(state.app);
+}
+
+export function getView(state) {
+  return fromApp.getView(state.app);
 }

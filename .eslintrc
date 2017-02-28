@@ -10,6 +10,9 @@
     "eslint:recommended",
     "plugin:react/recommended"
   ],
+  "globals": {
+    "Promise": false
+  },
   "rules": {
     "indent": [
       "error",

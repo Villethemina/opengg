@@ -1,5 +1,6 @@
 android/app/keystore.jks
 android/gradle.properties
+android/npm*
 
 # OSX
 #
