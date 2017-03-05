@@ -9,49 +9,115 @@ import {
 } from 'react-native';
 
 import AddSummonersView from './add_summoners_view';
-import { loadSummoners, changeView, loadMatchData } from '../actions/index';
-import { getView } from '../reducers/index';
-import { ADD_SUMMONERS_VIEW, MATCH_DETAILS_VIEW } from '../constants/views';
+import MatchDetailsView from './match_details_view';
+import NavigationBar from './navigation_bar';
+import { loadSummoners, changeView, loadMatchDataAndChangeView } from '../actions/index';
+import { getView, getMatch, getRanks } from '../reducers/index';
+import { ADD_SUMMONERS_VIEW, MATCH_DETAILS_VIEW, LOADING_VIEW } from '../constants/views';
 import { API_ADDRESS, API_KEY, SERVER } from '../constants/riot_api';
-import { ASYNC_STORAGE_KEY } from '../constants/app';
+import { ASYNC_STORAGE_KEY_SUMMONERIDS, ASYNC_STORAGE_KEY_MATCH, MATCH_MAX_CACHE_AGE } from '../constants/app';
 
 class Root extends Component {
-  state = {
-    searchFieldText: '',
-    modalVisible: false,
-    loading: false,
-    modalText: ''
+  componentWillMount() {
+    this.checkForExistingMatchData();
   }
 
-  componentWillMount() {
-    AsyncStorage.getItem(ASYNC_STORAGE_KEY).then(item => {
+  checkForExistingMatchData() {
+    AsyncStorage.getItem(ASYNC_STORAGE_KEY_MATCH).then(item => {
+      if (item) {
+        const matchObject = JSON.parse(item);
+        const date = new Date();
+        if (matchObject.time + MATCH_MAX_CACHE_AGE > date.getTime()) {
+          this.props.dispatch(loadMatchDataAndChangeView(matchObject.match, matchObject.ranks));
+        } else {
+          AsyncStorage.removeItem(ASYNC_STORAGE_KEY_MATCH);
+          this.checkForPlayersInGame();
+        }
+      } else {
+        this.checkForPlayersInGame();
+      }
+    }).done();
+  }
+
+  checkForPlayersInGame() {
+    AsyncStorage.getItem(ASYNC_STORAGE_KEY_SUMMONERIDS).then(item => {
       if (item) {
         const summoners = JSON.parse(item);
         this.props.dispatch(loadSummoners(summoners));
         this.checkForOngoingGame(summoners);
+      } else {
+        this.props.dispatch(changeView(ADD_SUMMONERS_VIEW));
       }
     }).done();
   }
 
   searchForSummonerInMatch = summonerId => {
-    fetch(`${API_ADDRESS}/observer-mode/rest/consumer/getSpectatorGameInfo/${SERVER}/${summonerId}?api_key=${API_KEY}`)
-    .then(response => {
-      console.log('match response: ', summonerId, response);
-      if (response.status !== 200) return Promise.reject('No match found for summoner: ' + summonerId);
-      return response.json();
-    })
-    .then(match => {
-      console.log(match);
-      this.props.dispatch(loadMatchData(match));
-      this.props.dispatch(changeView(MATCH_DETAILS_VIEW));
-    })
-    .catch(error => {
-      console.log(error);
-    });
+    console.log({ summonerId });
+    return fetch(`${API_ADDRESS}/observer-mode/rest/consumer/getSpectatorGameInfo/${SERVER}/${summonerId}?api_key=${API_KEY}`)
+      .then(response => {
+        console.log('match response: ', summonerId, response);
+        if (response.status !== 200) return Promise.reject('No match found for summoner: ' + summonerId);
+        return response.json();
+      });
   }
 
+  returnFirstResolvedPromise = promises => {
+    console.log({ promises });
+    if (promises.length === 0) return Promise.reject('No summoners left to check');
+    const promisesWithIndices = promises.map((promise, index) => promise.catch(() => { throw index; }));
+    return Promise.race(promisesWithIndices).catch(index => {
+      const rejectedPromise = promises.splice(index, 1)[0];
+      rejectedPromise.catch(error => console.log(error));
+      return this.returnFirstResolvedPromise(promises);
+    });
+  };
+
   checkForOngoingGame(summoners) {
-    Object.keys(summoners).forEach(key => this.searchForSummonerInMatch(key));
+    console.log({ summoners });
+    this.returnFirstResolvedPromise(
+      Object.keys(summoners).map(summonerId => this.searchForSummonerInMatch(summonerId))
+    )
+      .then(match => {
+        console.log(match);
+        this.fetchRankDataForMatch(match);
+      })
+      .catch(error => {
+        this.props.dispatch(changeView(MATCH_DETAILS_VIEW));
+        console.log(error);
+      });
+  }
+
+  fetchRankDataForMatch(match) {
+    const summonerIds = match.participants.map(participant => participant.summonerId);
+    if (summonerIds.length === 0) return;
+    const summonerIdStrings =summonerIds.join();
+    fetch(`${API_ADDRESS}/api/lol/euw/v2.5/league/by-summoner/${summonerIdStrings}/entry?api_key=${API_KEY}`)
+      .then(response => {
+        console.log('rankdata response: ', response);
+        if (response.status !== 200) return Promise.reject('Couldn\'t fetch rank data');
+        return response.json();
+      })
+      .then(ranks => {
+        console.log({ ranks });
+        this.props.dispatch(loadMatchDataAndChangeView(match, ranks));
+        this.storeMatchToDevice(match, ranks);
+      })
+      .catch(error => console.log(error));
+  }
+
+  storeMatchToDevice(match, ranks) {
+    const date = new Date();
+    const time = date.getTime();
+    AsyncStorage.setItem(ASYNC_STORAGE_KEY_MATCH, JSON.stringify({ match, ranks, time }));
+  }
+
+  handleMatchButtonPress = () => {
+    this.props.dispatch(changeView(MATCH_DETAILS_VIEW));
+    this.checkForExistingMatchData();
+  }
+
+  handleSummonerButtonPress = () => {
+    this.props.dispatch(changeView(ADD_SUMMONERS_VIEW));
   }
 
   renderIOS() {
@@ -64,20 +130,31 @@ class Root extends Component {
     );
   }
 
-  renderAndroid() {
+  renderView() {
     switch (this.props.view) {
+      case LOADING_VIEW: return (
+        <View style={styles.container}>
+          <Text style={styles.title}>
+            LOADING
+          </Text>
+        </View>
+      );
       case ADD_SUMMONERS_VIEW: return <AddSummonersView />;
-      case MATCH_DETAILS_VIEW: {
-        return (
-          <View style={styles.container}>
-            <Text style={styles.title}>
-              Match details view placeholder
-            </Text>
-          </View>
-        );
-      }
+      case MATCH_DETAILS_VIEW: return <MatchDetailsView />;
       default: return null;
     }
+  }
+
+  renderAndroid() {
+    return (
+      <View style={styles.container}>
+        {this.renderView()}
+        <NavigationBar
+          handleMatchButtonPress={this.handleMatchButtonPress}
+          handleSummonerButtonPress={this.handleSummonerButtonPress}
+        />
+      </View>
+    );
   }
 
   render() {
@@ -88,9 +165,7 @@ class Root extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF'
+    flex: 1
   },
   title: {
     fontSize: 20,
@@ -100,5 +175,7 @@ const styles = StyleSheet.create({
 });
 
 export default connect(state => ({
-  view: getView(state)
+  view: getView(state),
+  match: getMatch(state),
+  ranks: getRanks(state)
 }))(Root);

@@ -13,7 +13,7 @@ import Modal from './modal';
 import { addSummoner, clearSummoners } from '../actions/index';
 import { getSummoners } from '../reducers/index';
 import { API_ADDRESS, API_KEY } from '../constants/riot_api';
-import { ASYNC_STORAGE_KEY } from '../constants/app';
+import { ASYNC_STORAGE_KEY_SUMMONERIDS, MAX_SUMMONERS_ALLOWED } from '../constants/app';
 
 class AddSummonersView extends Component {
   state = {
@@ -25,37 +25,41 @@ class AddSummonersView extends Component {
   handleSearchFieldTextChange = searchFieldText => this.setState({ searchFieldText });
 
   handleAddSummoner = () => {
+    if (Object.keys(this.props.summoners).length >= MAX_SUMMONERS_ALLOWED) {
+      return this.setState({
+        modalText: 'Maximum allowed amount of summoners: ' + MAX_SUMMONERS_ALLOWED,
+        modalVisible: true
+      });
+    }
     fetch(`${API_ADDRESS}/api/lol/euw/v1.4/summoner/by-name/${this.state.searchFieldText}?api_key=${API_KEY}`)
-    .then(response => {
-      console.log('summoner name response: ', response);
-      if (response.status !== 200) {
-        this.setState({
-          modalText: 'Summoner not found!',
-          modalVisible: true
-        });
-        throw new Error('Summoner not found');
-      }
-      return response.json();
-    })
-    .then(summonerData => {
-      const summoner = Object.values(summonerData)[0];
-      this.props.dispatch(addSummoner(summoner));
-      AsyncStorage.setItem(ASYNC_STORAGE_KEY, JSON.stringify({
-        ...this.props.summoners,
-        [summoner.id]: summoner
-      }));
-    })
-    .catch(error => console.log('Data loading failed, reason: ' + error.message));
+      .then(response => {
+        console.log('summoner name response: ', response);
+        if (response.status !== 200) {
+          this.setState({
+            modalText: 'Summoner not found!',
+            modalVisible: true
+          });
+          return Promise.reject('Summoner not found');
+        }
+        return response.json();
+      })
+      .then(summonerData => {
+        const summoner = Object.values(summonerData)[0];
+        this.props.dispatch(addSummoner(summoner));
+        AsyncStorage.setItem(ASYNC_STORAGE_KEY_SUMMONERIDS, JSON.stringify({
+          ...this.props.summoners,
+          [summoner.id]: summoner
+        }));
+      })
+      .catch(error => console.log(error));
   };
 
   handleClearSummoners = () => {
     this.props.dispatch(clearSummoners());
-    AsyncStorage.removeItem(ASYNC_STORAGE_KEY);
+    AsyncStorage.removeItem(ASYNC_STORAGE_KEY_SUMMONERIDS);
   }
 
-  handleModalClose = () => {
-    this.setState({ modalVisible: false });
-  };
+  handleModalClose = () => this.setState({ modalVisible: false });
 
   render() {
     return (
@@ -102,6 +106,7 @@ class AddSummonersView extends Component {
 
 const styles = StyleSheet.create({
   container: {
+    alignSelf: 'stretch',
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#F5FCFF'
@@ -109,16 +114,6 @@ const styles = StyleSheet.create({
   searchArea: {
     marginTop: 20,
     marginBottom: 20
-  },
-  infoArea: {
-    justifyContent: 'flex-start'
-  },
-  split: {
-    flex: 1,
-    flexDirection: 'row'
-  },
-  half: {
-    flex: 0.5
   },
   title: {
     fontSize: 20,

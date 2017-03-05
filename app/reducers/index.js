@@ -11,6 +11,10 @@ export function getMatch(state) {
   return fromMatch.getMatch(state.match);
 }
 
+export function getRanks(state) {
+  return fromMatch.getRanks(state.match);
+}
+
 export function getSummoners(state) {
   return fromApp.getSummoners(state.app);
 }

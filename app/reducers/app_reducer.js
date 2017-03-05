@@ -2,12 +2,13 @@ import {
   ADD_SUMMONER,
   CHANGE_VIEW,
   CLEAR_SUMMONERS,
-  LOAD_SUMMONERS
+  LOAD_SUMMONERS,
+  LOAD_MATCH_DATA_AND_CHANGE_VIEW
 } from '../constants/actions';
-import { ADD_SUMMONERS_VIEW } from '../constants/views';
+import { LOADING_VIEW, MATCH_DETAILS_VIEW } from '../constants/views';
 
 const initialState = {
-  currentView: ADD_SUMMONERS_VIEW,
+  currentView: LOADING_VIEW,
   savedSummoners: {}
 };
 
@@ -17,6 +18,11 @@ const reducer = (state = initialState, action) => {
       return {
         ...state,
         currentView: action.view
+      };
+    case LOAD_MATCH_DATA_AND_CHANGE_VIEW:
+      return {
+        ...state,
+        currentView: MATCH_DETAILS_VIEW
       };
     case LOAD_SUMMONERS:
       return {

@@ -4,7 +4,8 @@ import {
   CLEAR_SUMMONERS,
   LOAD_MASTERY_DATA,
   LOAD_RUNE_DATA,
-  LOAD_MATCH_DATA,
+  LOAD_MATCH_DATA_AND_CHANGE_VIEW,
+  LOAD_MATCH_PLAYER_RANKS,
   LOAD_SUMMONERS
 } from '../constants/actions';
 
@@ -22,9 +23,15 @@ export const addSummoner = summoner => ({
   summoner
 });
 
-export const loadMatchData = match => ({
-  type: LOAD_MATCH_DATA,
-  match
+export const loadMatchDataAndChangeView = (match, ranks) => ({
+  type: LOAD_MATCH_DATA_AND_CHANGE_VIEW,
+  match,
+  ranks
+});
+
+export const loadMatchPlayerRanks = ranks => ({
+  type: LOAD_MATCH_PLAYER_RANKS,
+  ranks
 });
 
 export const loadMasteryData = data => ({

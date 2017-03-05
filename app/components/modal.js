@@ -37,11 +37,11 @@ export default class Modal extends Component {
 }
 
 const styles = StyleSheet.create({
+  containerSpacer: {
+    flex: 0.35
+  },
   container: {
     flexDirection: 'row',
-    flex: 0.4
-  },
-  containerSpacer: {
     flex: 0.3
   },
   content: {
@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     borderRadius: 10
   },
   text: {
+    textAlign: 'center',
     fontSize: 20,
     marginBottom: 20
   },
