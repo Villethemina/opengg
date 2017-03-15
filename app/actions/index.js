@@ -1,7 +1,7 @@
 import {
   ADD_SUMMONER,
   CHANGE_VIEW,
-  CLEAR_SUMMONERS,
+  DELETE_SUMMONER,
   LOAD_MASTERY_DATA,
   LOAD_RUNE_DATA,
   LOAD_MATCH_DATA_AND_CHANGE_VIEW,
@@ -14,8 +14,9 @@ export const loadSummoners = summoners => ({
   summoners
 });
 
-export const clearSummoners = () => ({
-  type: CLEAR_SUMMONERS
+export const deleteSummoner = summonerId => ({
+  type: DELETE_SUMMONER,
+  summonerId
 });
 
 export const addSummoner = summoner => ({

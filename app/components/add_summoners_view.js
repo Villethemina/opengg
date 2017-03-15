@@ -5,15 +5,16 @@ import {
   Text,
   TextInput,
   View,
-  Button,
-  AsyncStorage
+  ScrollView,
+  Button
 } from 'react-native';
 
 import Modal from './modal';
-import { addSummoner, clearSummoners } from '../actions/index';
+import Summoner from './summoner';
+import { addSummoner, deleteSummoner } from '../actions/index';
 import { getSummoners } from '../reducers/index';
 import { API_ADDRESS, API_KEY } from '../constants/riot_api';
-import { ASYNC_STORAGE_KEY_SUMMONERIDS, MAX_SUMMONERS_ALLOWED } from '../constants/app';
+import { MAX_SUMMONERS_ALLOWED } from '../constants/app';
 
 class AddSummonersView extends Component {
   state = {
@@ -31,6 +32,16 @@ class AddSummonersView extends Component {
         modalVisible: true
       });
     }
+    const summonerNames = Object.keys(this.props.summoners).map(
+      summonerId => this.props.summoners[summonerId].name.toUpperCase()
+    );
+    console.log(summonerNames, this.state.searchFieldText.toUpperCase());
+    if (summonerNames.includes(this.state.searchFieldText.toUpperCase())) {
+      return this.setState({
+        modalText: 'Summoner already added!',
+        modalVisible: true
+      });
+    }
     fetch(`${API_ADDRESS}/api/lol/euw/v1.4/summoner/by-name/${this.state.searchFieldText}?api_key=${API_KEY}`)
       .then(response => {
         console.log('summoner name response: ', response);
@@ -45,18 +56,14 @@ class AddSummonersView extends Component {
       })
       .then(summonerData => {
         const summoner = Object.values(summonerData)[0];
+        console.log('addSummoner dispatched with', summoner);
         this.props.dispatch(addSummoner(summoner));
-        AsyncStorage.setItem(ASYNC_STORAGE_KEY_SUMMONERIDS, JSON.stringify({
-          ...this.props.summoners,
-          [summoner.id]: summoner
-        }));
       })
       .catch(error => console.log(error));
   };
 
-  handleClearSummoners = () => {
-    this.props.dispatch(clearSummoners());
-    AsyncStorage.removeItem(ASYNC_STORAGE_KEY_SUMMONERIDS);
+  handleDeleteSummoner = summonerId => {
+    this.props.dispatch(deleteSummoner(summonerId));
   }
 
   handleModalClose = () => this.setState({ modalVisible: false });
@@ -69,36 +76,43 @@ class AddSummonersView extends Component {
           transparent={true}
           visible={this.state.modalVisible}
           handleClose={this.handleModalClose}
-          title={'Okay.'}
+          buttonTitle={'Okay.'}
           text={this.state.modalText}
         />
         <View style={styles.searchArea}>
           <Text style={styles.title}>
-            Add a summoner:
+            OpenGG
           </Text>
+        </View>
+        <Text style={styles.title}>
+          Summoners:
+        </Text>
+        <View style={styles.summonerList}>
+          {Object.keys(this.props.summoners).map(summonerId =>
+            <Summoner
+              key={summonerId}
+              summonerId={summonerId}
+              summonerName={this.props.summoners[summonerId].name}
+              onDelete={this.handleDeleteSummoner}
+            />
+          )}
           <TextInput
             autoCapitalize={'none'}
             autoCorrect={false}
             maxLength={16}
             style={styles.searchField}
             onChangeText={this.handleSearchFieldTextChange}
-            placeholder={'Summoner name'}
+            placeholder={'Add a summoner'}
             onSubmitEditing={this.handleAddSummoner}
             value={this.state.searchFieldText}
           />
         </View>
-        <Text style={styles.title}>
-          Summoners:
-        </Text>
-        {Object.keys(this.props.summoners).map(summonerKey =>
-          <Text key={summonerKey} style={styles.text}>
-            {this.props.summoners[summonerKey].name}
-          </Text>
-        )}
-        <Button
-          onPress={this.handleClearSummoners}
-          title={'Delete summoners'}
-        />
+        <View style={styles.buttonContainer}>
+          <Button
+            onPress={this.props.onSearchButtonPress}
+            title={'Search'}
+          />
+        </View>
       </View>
     );
   }
@@ -110,6 +124,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#F5FCFF'
+  },
+  summonerList: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    height: 300,
+    marginLeft: 15,
+    marginRight: 15,
+    backgroundColor: '#dddddd'
   },
   searchArea: {
     marginTop: 20,
@@ -129,7 +151,13 @@ const styles = StyleSheet.create({
     height: 40,
     width: 250,
     borderColor: 'gray',
-    borderWidth: 1
+    borderWidth: 1,
+    borderRadius: 4,
+    margin: 5,
+    backgroundColor: '#fff'
+  },
+  buttonContainer: {
+    margin: 10
   }
 });
 

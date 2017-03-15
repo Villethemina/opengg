@@ -4,60 +4,29 @@ import {
   Platform,
   StyleSheet,
   Text,
-  View,
-  AsyncStorage
+  View
 } from 'react-native';
 
 import AddSummonersView from './add_summoners_view';
 import MatchDetailsView from './match_details_view';
-import NavigationBar from './navigation_bar';
-import { loadSummoners, changeView, loadMatchDataAndChangeView } from '../actions/index';
-import { getView, getMatch, getRanks } from '../reducers/index';
+import { changeView, loadMatchDataAndChangeView } from '../actions/index';
+import { getView, getMatch, getRanks, getSummoners } from '../reducers/index';
 import { ADD_SUMMONERS_VIEW, MATCH_DETAILS_VIEW, LOADING_VIEW } from '../constants/views';
 import { API_ADDRESS, API_KEY, SERVER } from '../constants/riot_api';
-import { ASYNC_STORAGE_KEY_SUMMONERIDS, ASYNC_STORAGE_KEY_MATCH, MATCH_MAX_CACHE_AGE } from '../constants/app';
 
 class Root extends Component {
-  componentWillMount() {
-    this.checkForExistingMatchData();
-  }
-
-  checkForExistingMatchData() {
-    AsyncStorage.getItem(ASYNC_STORAGE_KEY_MATCH).then(item => {
-      if (item) {
-        const matchObject = JSON.parse(item);
-        const date = new Date();
-        if (matchObject.time + MATCH_MAX_CACHE_AGE > date.getTime()) {
-          this.props.dispatch(loadMatchDataAndChangeView(matchObject.match, matchObject.ranks));
-        } else {
-          AsyncStorage.removeItem(ASYNC_STORAGE_KEY_MATCH);
-          this.checkForPlayersInGame();
-        }
-      } else {
-        this.checkForPlayersInGame();
-      }
-    }).done();
-  }
-
-  checkForPlayersInGame() {
-    AsyncStorage.getItem(ASYNC_STORAGE_KEY_SUMMONERIDS).then(item => {
-      if (item) {
-        const summoners = JSON.parse(item);
-        this.props.dispatch(loadSummoners(summoners));
-        this.checkForOngoingGame(summoners);
-      } else {
-        this.props.dispatch(changeView(ADD_SUMMONERS_VIEW));
-      }
-    }).done();
-  }
-
   searchForSummonerInMatch = summonerId => {
     console.log({ summonerId });
     return fetch(`${API_ADDRESS}/observer-mode/rest/consumer/getSpectatorGameInfo/${SERVER}/${summonerId}?api_key=${API_KEY}`)
       .then(response => {
         console.log('match response: ', summonerId, response);
-        if (response.status !== 200) return Promise.reject('No match found for summoner: ' + summonerId);
-        return response.json();
+        return Promise.resolve(
+          /* eslint-disable */
+          {"gameLength":751,"gameMode":"ARAM","mapId":12,"bannedChampions":[],"gameType":"MATCHED_GAME","gameId":3083602387,"observers":{"encryptionKey":"xtKoVfS/h/TMljqXIbYagt0J06y2hMR4"},"gameQueueConfigId":65,"gameStartTime":1488305215126,"participants":[{"masteries":[{"rank":5,"masteryId":6111},{"rank":1,"masteryId":6122},{"rank":5,"masteryId":6131},{"rank":1,"masteryId":6142},{"rank":5,"masteryId":6151},{"rank":1,"masteryId":6161},{"rank":5,"masteryId":6312},{"rank":1,"masteryId":6323},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6343}],"bot":false,"runes":[{"count":1,"runeId":5245},{"count":8,"runeId":5253},{"count":2,"runeId":5289},{"count":2,"runeId":5295},{"count":5,"runeId":5296},{"count":9,"runeId":5317},{"count":3,"runeId":5335}],"spell2Id":32,"profileIconId":578,"summonerName":"Zarevil","championId":114,"teamId":100,"summonerId":38579366,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6114},{"rank":1,"masteryId":6121},{"rank":5,"masteryId":6134},{"rank":1,"masteryId":6141},{"rank":5,"masteryId":6312},{"rank":1,"masteryId":6322},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6343},{"rank":5,"masteryId":6352},{"rank":1,"masteryId":6362}],"bot":false,"runes":[{"count":9,"runeId":5273},{"count":9,"runeId":5289},{"count":9,"runeId":5317},{"count":3,"runeId":5357}],"spell2Id":14,"profileIconId":1395,"summonerName":"GimmeSixZeroNine","championId":245,"teamId":100,"summonerId":61592622,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6111},{"rank":1,"masteryId":6121},{"rank":5,"masteryId":6131},{"rank":1,"masteryId":6143},{"rank":5,"masteryId":6312},{"rank":1,"masteryId":6323},{"rank":5,"masteryId":6332},{"rank":1,"masteryId":6343},{"rank":5,"masteryId":6351},{"rank":1,"masteryId":6362}],"bot":false,"runes":[{"count":9,"runeId":5253},{"count":3,"runeId":5289},{"count":6,"runeId":5295},{"count":9,"runeId":5317},{"count":2,"runeId":5343},{"count":1,"runeId":5355}],"spell2Id":7,"profileIconId":1439,"summonerName":"VolKiRaR","championId":420,"teamId":100,"summonerId":46147096,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6114},{"rank":1,"masteryId":6122},{"rank":5,"masteryId":6134},{"rank":1,"masteryId":6142},{"rank":5,"masteryId":6311},{"rank":1,"masteryId":6322},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6343},{"rank":5,"masteryId":6352},{"rank":1,"masteryId":6362}],"bot":false,"runes":[{"count":9,"runeId":5273},{"count":9,"runeId":5289},{"count":9,"runeId":5317},{"count":3,"runeId":5357}],"spell2Id":4,"profileIconId":983,"summonerName":"alexus4488","championId":105,"teamId":100,"summonerId":61882772,"spell1Id":32},{"masteries":[{"rank":5,"masteryId":6211},{"rank":1,"masteryId":6223},{"rank":5,"masteryId":6232},{"rank":1,"masteryId":6241},{"rank":5,"masteryId":6312},{"rank":1,"masteryId":6323},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6341},{"rank":5,"masteryId":6351},{"rank":1,"masteryId":6362}],"bot":false,"runes":[{"count":9,"runeId":5267},{"count":9,"runeId":5296},{"count":9,"runeId":5317},{"count":1,"runeId":5356},{"count":2,"runeId":5357}],"spell2Id":13,"profileIconId":782,"summonerName":"tanner912","championId":45,"teamId":100,"summonerId":38542105,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6111},{"rank":1,"masteryId":6122},{"rank":5,"masteryId":6131},{"rank":1,"masteryId":6141},{"rank":5,"masteryId":6311},{"rank":1,"masteryId":6322},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6342},{"rank":5,"masteryId":6351},{"rank":1,"masteryId":6362}],"bot":false,"runes":[{"count":9,"runeId":5245},{"count":9,"runeId":5289},{"count":9,"runeId":5317},{"count":3,"runeId":5335}],"spell2Id":32,"profileIconId":1590,"summonerName":"Queen Thresh","championId":238,"teamId":200,"summonerId":40105462,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6111},{"rank":1,"masteryId":6121},{"rank":5,"masteryId":6134},{"rank":1,"masteryId":6141},{"rank":5,"masteryId":6151},{"rank":1,"masteryId":6161},{"rank":5,"masteryId":6212},{"rank":1,"masteryId":6223},{"rank":5,"masteryId":6231},{"rank":1,"masteryId":6242}],"bot":false,"runes":[{"count":9,"runeId":5245},{"count":3,"runeId":5277},{"count":6,"runeId":5289},{"count":5,"runeId":5315},{"count":4,"runeId":5317},{"count":1,"runeId":5335},{"count":2,"runeId":5337}],"spell2Id":3,"profileIconId":785,"summonerName":"tribonaut","championId":91,"teamId":200,"summonerId":24637811,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6114},{"rank":1,"masteryId":6122},{"rank":5,"masteryId":6131},{"rank":1,"masteryId":6142},{"rank":5,"masteryId":6154},{"rank":1,"masteryId":6164},{"rank":5,"masteryId":6312},{"rank":1,"masteryId":6322},{"rank":5,"masteryId":6331},{"rank":1,"masteryId":6343}],"bot":false,"runes":[{"count":9,"runeId":5273},{"count":9,"runeId":5289},{"count":9,"runeId":5315},{"count":3,"runeId":5357}],"spell2Id":7,"profileIconId":1391,"summonerName":"FTS MadKillerZ","championId":38,"teamId":200,"summonerId":24300588,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6111},{"rank":1,"masteryId":6121},{"rank":5,"masteryId":6131},{"rank":1,"masteryId":6142},{"rank":5,"masteryId":6151},{"rank":1,"masteryId":6161},{"rank":5,"masteryId":6212},{"rank":1,"masteryId":6223},{"rank":5,"masteryId":6231},{"rank":1,"masteryId":6243}],"bot":false,"runes":[{"count":9,"runeId":5245},{"count":4,"runeId":5289},{"count":5,"runeId":5290},{"count":9,"runeId":5317},{"count":3,"runeId":5335}],"spell2Id":32,"profileIconId":912,"summonerName":"DerDjango","championId":21,"teamId":200,"summonerId":38958436,"spell1Id":4},{"masteries":[{"rank":5,"masteryId":6114},{"rank":1,"masteryId":6123},{"rank":5,"masteryId":6134},{"rank":1,"masteryId":6142},{"rank":5,"masteryId":6154},{"rank":1,"masteryId":6164},{"rank":5,"masteryId":6212},{"rank":1,"masteryId":6223},{"rank":5,"masteryId":6232},{"rank":1,"masteryId":6242}],"bot":false,"runes":[{"count":9,"runeId":5273},{"count":5,"runeId":5290},{"count":4,"runeId":5297},{"count":4,"runeId":5317},{"count":5,"runeId":5327},{"count":3,"runeId":5357}],"spell2Id":7,"profileIconId":608,"summonerName":"EPicKi113R","championId":25,"teamId":200,"summonerId":37561637,"spell1Id":4}],"platformId":"EUW1"}
+          /* eslint-enable */
+        );
+        /*if (response.status !== 200) return Promise.reject('No match found for summoner: ' + summonerId);
+        return response.json();*/
       });
   }
 
@@ -100,23 +69,16 @@ class Root extends Component {
       .then(ranks => {
         console.log({ ranks });
         this.props.dispatch(loadMatchDataAndChangeView(match, ranks));
-        this.storeMatchToDevice(match, ranks);
       })
       .catch(error => console.log(error));
   }
 
-  storeMatchToDevice(match, ranks) {
-    const date = new Date();
-    const time = date.getTime();
-    AsyncStorage.setItem(ASYNC_STORAGE_KEY_MATCH, JSON.stringify({ match, ranks, time }));
-  }
-
-  handleMatchButtonPress = () => {
+  handleSearchButtonPress = () => {
     this.props.dispatch(changeView(MATCH_DETAILS_VIEW));
-    this.checkForExistingMatchData();
+    this.checkForOngoingGame(this.props.summoners);
   }
 
-  handleSummonerButtonPress = () => {
+  handleBackButtonPress = () => {
     this.props.dispatch(changeView(ADD_SUMMONERS_VIEW));
   }
 
@@ -139,8 +101,12 @@ class Root extends Component {
           </Text>
         </View>
       );
-      case ADD_SUMMONERS_VIEW: return <AddSummonersView />;
-      case MATCH_DETAILS_VIEW: return <MatchDetailsView />;
+      case ADD_SUMMONERS_VIEW: return (
+        <AddSummonersView onSearchButtonPress={this.handleSearchButtonPress} />
+      );
+      case MATCH_DETAILS_VIEW: return (
+        <MatchDetailsView onBackButtonPress={this.handleBackButtonPress} />
+      );
       default: return null;
     }
   }
@@ -149,10 +115,6 @@ class Root extends Component {
     return (
       <View style={styles.container}>
         {this.renderView()}
-        <NavigationBar
-          handleMatchButtonPress={this.handleMatchButtonPress}
-          handleSummonerButtonPress={this.handleSummonerButtonPress}
-        />
       </View>
     );
   }
@@ -177,5 +139,6 @@ const styles = StyleSheet.create({
 export default connect(state => ({
   view: getView(state),
   match: getMatch(state),
-  ranks: getRanks(state)
+  ranks: getRanks(state),
+  summoners: getSummoners(state)
 }))(Root);

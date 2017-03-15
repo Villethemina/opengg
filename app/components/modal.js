@@ -25,7 +25,7 @@ export default class Modal extends Component {
             </Text>
             <Button
               onPress={this.props.handleClose}
-              title={this.props.title}
+              title={this.props.buttonTitle}
             />
           </View>
           <View style={styles.spacer} />

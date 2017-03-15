@@ -1,18 +1,19 @@
 import {
   ADD_SUMMONER,
   CHANGE_VIEW,
-  CLEAR_SUMMONERS,
+  DELETE_SUMMONER,
   LOAD_SUMMONERS,
   LOAD_MATCH_DATA_AND_CHANGE_VIEW
 } from '../constants/actions';
-import { LOADING_VIEW, MATCH_DETAILS_VIEW } from '../constants/views';
+import { ADD_SUMMONERS_VIEW, MATCH_DETAILS_VIEW } from '../constants/views';
 
 const initialState = {
-  currentView: LOADING_VIEW,
+  currentView: ADD_SUMMONERS_VIEW,
   savedSummoners: {}
 };
 
 const reducer = (state = initialState, action) => {
+  console.log(action);
   switch (action.type) {
     case CHANGE_VIEW:
       return {
@@ -29,11 +30,16 @@ const reducer = (state = initialState, action) => {
         ...state,
         savedSummoners: action.summoners
       };
-    case CLEAR_SUMMONERS:
+    case DELETE_SUMMONER: {
+      const newSavedSummoners = Object.keys(state.savedSummoners).reduce((savedSummoners, summonerId) => {
+        if (summonerId === action.summonerId) return savedSummoners;
+        else return { ...savedSummoners, [summonerId]: state.savedSummoners[summonerId] };
+      }, {});
       return {
         ...state,
-        savedSummoners: {}
+        savedSummoners: newSavedSummoners
       };
+    }
     case ADD_SUMMONER:
       return {
         ...state,
